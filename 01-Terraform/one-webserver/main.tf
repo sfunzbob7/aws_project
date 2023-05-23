@@ -10,7 +10,7 @@ resource "aws_instance" "example" {
 user_data = <<-EOF
 						#!/bin/bash
 						echo "Hello, World" > index.html
-						nohup busybox httpd -f -p 8080 &
+						nohup busybox httpd -f -p $(var.server_port} &
 						EOF
 
 	tags = {
@@ -22,8 +22,8 @@ resource "aws_security_group" "instance" {
 	name = "aws02-terraform-example-instance"
 
 	ingress {
-		from_port 	= 8080
-		to_port  	  = 8080
+		from_port 	= var.server_port
+		to_port  	  = var.server_port
 		protocol 		= "tcp"
 		cidr_blocks = ["0.0.0.0/0"]
 	}
@@ -32,4 +32,9 @@ resource "aws_security_group" "instance" {
 output "public_ip" {
 	value = aws_instance.example.public_ip
 	description = "The public IP of the Instance"
+}
+
+variable "server_port" {
+	description = "The port will use for HTTP requests"
+	type				= number
 }
