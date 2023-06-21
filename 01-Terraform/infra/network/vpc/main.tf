@@ -1,19 +1,19 @@
 # VPC 생성
-resource "aws_vpc" "aws02-vpc" {
-	cidr_block = var.vpc_cidr
+resource "aws_vpc" "aws02_vpc" {
+	cidr_block 			 = var.vpc_cidr
 	enable_dns_hostnames = true
-	enable_dns_support = true
-	instance_tenancy = "default"
+	enable_dns_support	 = true
+	instance_tenancy 	 = "default"
 
 	tags = {
-		Name = "aws02-vpc"
+		Name = "aws02_vpc"
 	}
 }
 
 # 퍼블릭 서브넷 2a
 resource "aws_subnet" "aws02_public_subnet2a" {
-		vpc_id = aws_vpc.aws02-vpc.id
-		cidr_block = var.public_subnet[0]
+		vpc_id 			  = aws_vpc.aws02_vpc.id
+		cidr_block 		  = var.public_subnet[0]
 		availability_zone = var.azs[0]
 
 		tags = {
@@ -23,8 +23,8 @@ resource "aws_subnet" "aws02_public_subnet2a" {
 
 # 퍼블릭 서브넷 2c
 resource "aws_subnet" "aws02_public_subnet2c" {
-		vpc_id = aws_vpc.aws02-vpc.id
-		cidr_block = var.public_subnet[1]
+		vpc_id 			  = aws_vpc.aws02_vpc.id
+		cidr_block 		  = var.public_subnet[1]
 		availability_zone = var.azs[1]
 
 		tags = {
@@ -34,8 +34,8 @@ resource "aws_subnet" "aws02_public_subnet2c" {
 
 # 프라이빗 서브넷 2a
 resource "aws_subnet" "aws02_private_subnet2a" {
-		vpc_id = aws_vpc.aws02-vpc.id
-		cidr_block = var.private_subnet[0]
+		vpc_id 			  = aws_vpc.aws02_vpc.id
+		cidr_block 		  = var.private_subnet[0]
 		availability_zone = var.azs[0]
 
 		tags = {
@@ -45,11 +45,88 @@ resource "aws_subnet" "aws02_private_subnet2a" {
 
 # 프라이빗 서브넷 2c
 resource "aws_subnet" "aws02_private_subnet2c" {
-		vpc_id = aws_vpc.aws02-vpc.id
-		cidr_block = var.private_subnet[1]
+		vpc_id 			  = aws_vpc.aws02_vpc.id
+		cidr_block 		  = var.private_subnet[1]
 		availability_zone = var.azs[1]
 
 		tags = {
 			Name = "aws02-private-subnet2c"
 		}
+}
+
+# Internet Gatway
+resource "aws_internet_gateway" "aws02_igw" {
+	vpc_id = aws_vpc.aws02_vpc.id
+
+	tags = {
+		Name = "aws02-Internet-gateway"
+	}
+}
+
+# EIP for NAT Gatway
+resource "aws_eip" "aws02_eip" {
+	vpc 	   = true
+	depends_on = ["aws_internet_gateway.aws02_igw"]
+	lifecycle {
+		create_before_destroy = true
+	}
+}
+
+# NAT Gateway
+resource "aws_nat_gateway" "aws02_nat" {
+	allocation_id = aws_eip.aws02_eip.id
+	# NAT를 생성할 서브넷 위치
+	subnet_id 	  = aws_subnet.aws02_public_subnet2a.id
+	depends_on 	  = ["aws_internet_gateway.aws02_igw"]
+}
+
+# AWS에서 VPC를 생성하면 자동으로 route table이 하나 생긴다.
+# aws_default_route_table은 route table을 만들지 않고 VPC가 만든
+# 기본 route table을 가져와서 terraform이 관리할 수 있게 한다.
+resource "aws_default_route_table" "aws02_public_rt" {
+	default_route_table_id = aws_vpc.aws02_vpc.default_route_table_id
+
+	route {
+		cidr_block = "0.0.0.0/0"
+		gateway_id = aws_internet_gateway.aws02_igw.id
+	}
+	tags = {
+		Name = "aws02-public-route-table"
+	}
+}
+
+# 퍼블릭 서브넷에 디폴트 라우터를 연결
+resource "aws_route_table_association" "aws02_public_rta_2a" {
+	subnet_id 	   = aws_subnet.aws02_public_subnet2a.id
+	route_table_id = aws_default_route_table.aws02_public_rt.id
+}
+
+resource "aws_route_table_association" "aws02_public_rta_2c" {
+	subnet_id 	   = aws_subnet.aws02_public_subnet2c.id
+	route_table_id = aws_default_route_table.aws02_public_rt.id
+}
+
+# 프라이빗 라우트 생성 및 프라이빗 서브넷에 연결
+resource "aws_route_table" "aws02_private_rt" {
+	vpc_id = aws_vpc.aws02_vpc.id
+
+	tags = {
+		Name = "aws02-private-route-table"
+	}
+}
+
+resource "aws_route_table_association" "aws02_private_rta_2a" {
+	subnet_id 	   = aws_subnet.aws02_private_subnet2a.id
+	route_table_id = aws_route_table.aws02_private_rt.id
+}
+
+resource "aws_route_table_association" "aws02_private_rta_2c" {
+	subnet_id 	   = aws_subnet.aws02_private_subnet2c.id
+	route_table_id = aws_route_table.aws02_private_rt.id
+}
+
+resource "aws_route" "aws02_private_rt_table" {
+	route_table_id 		   = aws_route_table.aws02_private_rt.id
+	destination_cidr_block = "0.0.0.0/0"
+	nat_gateway_id 		   = aws_nat_gateway.aws02_nat.id
 }
