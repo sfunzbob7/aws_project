@@ -1,0 +1,94 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+#==============#
+# CentOS Nodes #
+#==============#
+
+# Ansible-Node01
+Vagrant.configure("2") do |config|
+  config.vm.define "ansible-node01" do |cfg|
+    # provisioning 할 운영체제 선택
+    cfg.vm.box = "centos/7"
+    cfg.vm.provider "virtualbox" do |vb|
+      # 가상 머신 이름 지정
+      vb.name = "Ansible-node01"
+    end
+    # 가상 머신 Hostname 지정
+    cfg.vm.host_name = "ansible-node01"
+    # 네트워크 지정
+    cfg.vm.network "private_network", ip: "192.168.56.11"
+    cfg.vm.network "forwarded_port", guest: 22, host: 60011, auto_correct: true, id: "ssh"
+    # host와 사용하게 될 공유 폴더 지정
+    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+    cfg.vm.provision "shell", path: "bash_ssh_conf_4_CentOS.sh"
+  end
+end
+
+# Ansible-Node02
+Vagrant.configure("2") do |config|
+  config.vm.define "ansible-node02" do |cfg|
+    # provisioning 할 운영체제 선택
+    cfg.vm.box = "centos/7"
+    cfg.vm.provider "virtualbox" do |vb|
+      # 가상 머신 이름 지정
+      vb.name = "Ansible-node02"
+    end
+    # 가상 머신 Hostname 지정
+    cfg.vm.host_name = "ansible-node02"
+    # 네트워크 지정
+    cfg.vm.network "private_network", ip: "192.168.56.12"
+    cfg.vm.network "forwarded_port", guest: 22, host: 60012, auto_correct: true, id: "ssh"
+    # host와 사용하게 될 공유 폴더 지정
+    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+    cfg.vm.provision "shell", path: "bash_ssh_conf_4_CentOS.sh"
+  end
+end
+
+# Ansible-Node03
+Vagrant.configure("2") do |config|
+  config.vm.define "ansible-node03" do |cfg|
+    # provisioning 할 운영체제 선택
+    cfg.vm.box = "centos/7"
+    cfg.vm.provider "virtualbox" do |vb|
+      # 가상 머신 이름 지정
+      vb.name = "Ansible-node03"
+    end
+    # 가상 머신 Hostname 지정
+    cfg.vm.host_name = "ansible-node03"
+    # 네트워크 지정
+    cfg.vm.network "private_network", ip: "192.168.56.13"
+    cfg.vm.network "forwarded_port", guest: 22, host: 60013, auto_correct: true, id: "ssh"
+    # host와 사용하게 될 공유 폴더 지정
+    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+    cfg.vm.provision "shell", path: "bash_ssh_conf_4_CentOS.sh"
+  end
+end
+
+#================#
+# Ansible Server #
+#================#
+
+# Vagrant.configure("2") : Vagrant version 2
+# config.vm.define : vagrant 명령어를 사용할 때 이용될 tag 
+Vagrant.configure("2") do |config|
+  config.vm.define "ansible-server" do |cfg|
+    # provisioning 할 운영체제 선택
+    cfg.vm.box = "centos/7"
+    cfg.vm.provider "virtualbox" do |vb|
+      # 가상 머신 이름 지정
+      vb.name = "Ansible-Server"
+    end
+    # 가상 머신 Hostname 지정
+    cfg.vm.host_name = "ansible-server"
+    # 네트워크 지정
+    cfg.vm.network "private_network", ip: "192.168.56.10"
+    cfg.vm.network "forwarded_port", guest: 22, host: 60010, auto_correct: true, id: "ssh"
+    # host와 사용하게 될 공유 폴더 지정
+    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+    cfg.vm.provision "shell", inline: "yum install epel-release -y" 
+    cfg.vm.provision "shell", inline: "yum install ansible -y"
+    cfg.vm.provision "file", source: "ansible_env_ready.yml", destination: "ansible_env_ready.yml"
+    cfg.vm.provision "shell", inline: "ansible-playbook ansible_env_ready.yml"
+  end
+end
