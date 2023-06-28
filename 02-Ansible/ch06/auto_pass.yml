@@ -4,6 +4,8 @@
   connection: local
   serial: 1
   gather_facts: no
+  vars:
+    ansible_password: vagrant
 
   tasks:
     - name: ssh-keyscan for known_hosts file
@@ -17,3 +19,23 @@
         create: yes
       with_items:
         - "{{ keyscan.stdout_lines }}"
+
+    # 개인키, 공개키 생성
+    # ssh-keygen 옵션
+    # -b 2048 : 생성할 키의 비트수
+    # -t rsa : 암호화 방식을 rsa로 지정
+    # -f <위치> : 키를 생성할 위치를 지정
+    # -q : 사일런트 모드
+    # -N : 암호문을 공란('')으로 생성
+    - name: ssh-keygen for authorized_keys file
+      command: "ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ''"
+      ignore_errors: yes #에러가 발생해도 무시하고 계속 실행
+      run_once: true #한번만 실행
+
+    - name: input key for each node
+      connection: ssh
+      authorized_key: #공개키를 authorized_key로 저장하는 모듈
+        user: vagrant
+        state: present
+        #lookup 찾아서 읽기, 옵션(현재는 file), 대상의 경로
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"

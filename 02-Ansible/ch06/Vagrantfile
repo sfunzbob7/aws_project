@@ -3,99 +3,50 @@
 
 Vagrant.configure("2") do |config|
  config.vm.boot_timeout = 1800  # 30 minutes
+
 #==============#
 # CentOS Nodes #
 #==============#
 
-# Ansible-Node01
-  config.vm.define "ansible-node01" do |cfg|
+(1..3).each do |i|
+  config.vm.define "ansible-node0#{i}" do |cfg|
     # provisioning 할 운영체제 선택
     cfg.vm.box = "centos/7"
     cfg.vm.provider "virtualbox" do |vb|
       # 가상 머신 이름 지정
-      vb.name = "Ansible-node01"
+      vb.name = "Ansible-node0#{i}"
+      vb.customize ["modifyvm", :id, "--groups", "/ansible"]
     end
     # 가상 머신 Hostname 지정
-    cfg.vm.host_name = "ansible-node01"
+    cfg.vm.host_name = "ansible-node0#{i}"
     # 네트워크 지정
-    cfg.vm.network "private_network", ip: "192.168.56.11"
-    cfg.vm.network "forwarded_port", guest: 22, host: 60011, auto_correct: true, id: "ssh"
+    cfg.vm.network "private_network", ip: "192.168.56.1#{i}"
+    cfg.vm.network "forwarded_port", guest: 22, host: "6001#{i}", auto_correct: true, id: "ssh"
     # host와 사용하게 될 공유 폴더 지정
     cfg.vm.synced_folder "../data", "/vagrant", disabled: true
     cfg.vm.provision "shell", path: "bash_ssh_conf_4_CentOS.sh"
   end
-
-# Ansible-Node02
-  config.vm.define "ansible-node02" do |cfg|
-    cfg.vm.box = "centos/7"
-    cfg.vm.provider "virtualbox" do |vb|
-      vb.name = "Ansible-node02"
-    end
-    cfg.vm.host_name = "ansible-node02"
-    cfg.vm.network "private_network", ip: "192.168.56.12"
-    cfg.vm.network "forwarded_port", guest: 22, host: 60012, auto_correct: true, id: "ssh"
-    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
-    cfg.vm.provision "shell", path: "bash_ssh_conf_4_CentOS.sh"
-  end
-
-# Ansible-Node03
-  config.vm.define "ansible-node03" do |cfg|
-    cfg.vm.box = "centos/7"
-    cfg.vm.provider "virtualbox" do |vb|
-      vb.name = "Ansible-node03"
-    end
-    cfg.vm.host_name = "ansible-node03"
-    cfg.vm.network "private_network", ip: "192.168.56.13"
-    cfg.vm.network "forwarded_port", guest: 22, host: 60013, auto_correct: true, id: "ssh"
-    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
-    cfg.vm.provision "shell", path: "bash_ssh_conf_4_CentOS.sh"
-  end
+end
 
 #==============#
 # Ubuntu nodes #
 #==============#
 
-# Ansible-Node04
-  config.vm.define "ansible-node04" do |cfg|
+(4..6).each do |i|
+  config.vm.define "ansible-node0#{i}" do |cfg|
     cfg.vm.box = "ubuntu/trusty64"
     cfg.vm.provider "virtualbox" do |vb|
-      vb.name = "Ansible-node04"
+      vb.name = "Ansible-node0#{i}"
+      vb.customize ["modifyvm", :id, "--groups", "/ansible"]
       vb.cpus =2
       vb.memory = 2048
     end
-    cfg.vm.host_name = "ansible-node04"
-    cfg.vm.network "private_network", ip: "192.168.56.14"
-    cfg.vm.network "forwarded_port", guest: 22, host: 60014, auto_correct: true, id: "ssh"
+    cfg.vm.host_name = "ansible-node0#{i}"
+    cfg.vm.network "private_network", ip: "192.168.56.1#{i}"
+    cfg.vm.network "forwarded_port", guest: 22, host: "6001#{i}", auto_correct: true, id: "ssh"
     cfg.vm.synced_folder "../data", "/vagrant", disabled: true
   end
-
-# Ansible-Node05
-  config.vm.define "ansible-node05" do |cfg|
-    cfg.vm.box = "ubuntu/trusty64"
-    cfg.vm.provider "virtualbox" do |vb|
-      vb.name = "Ansible-node05"
-      vb.cpus =2
-      vb.memory = 2048
-    end
-    cfg.vm.host_name = "ansible-node05"
-    cfg.vm.network "private_network", ip: "192.168.56.15"
-    cfg.vm.network "forwarded_port", guest: 22, host: 60015, auto_correct: true, id: "ssh"
-    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
-  end
-
-# Ansible-Node06
-  config.vm.define "ansible-node06" do |cfg|
-    cfg.vm.box = "ubuntu/trusty64"
-    cfg.vm.provider "virtualbox" do |vb|
-      vb.name = "Ansible-node06"
-      vb.cpus =2
-      vb.memory = 2048
-    end
-    cfg.vm.host_name = "ansible-node06"
-    cfg.vm.network "private_network", ip: "192.168.56.16"
-    cfg.vm.network "forwarded_port", guest: 22, host: 60016, auto_correct: true, id: "ssh"
-    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
-  end
+end
 
 #================#
 # Ansible Server #
